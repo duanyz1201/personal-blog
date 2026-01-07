@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  avatar    String?
+  bio       String?  @db.Text
+  createdAt DateTime @default(now())
+}
+
+model Post {
+  id          Int       @id @default(autoincrement())
+  title       String
+  slug        String    @unique
+  content     String?   @db.LongText
+  excerpt     String?   @db.Text
+  coverImage  String?
+  published   Boolean   @default(false)
+  viewCount   Int       @default(0)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // 关系
+  category    Category? @relation(fields: [categoryId], references: [id])
+  categoryId  Int?
+  
+  tags        Tag[]     // 隐式多对多关系
+  comments    Comment[]
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  slug  String @unique
+  posts Post[]
+}
+
+model Tag {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  slug  String @unique
+  posts Post[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  nickname  String
+  email     String?
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int
+}
+
+model DailyStat {
+  id       Int      @id @default(autoincrement())
+  date     DateTime @unique @db.Date // 每天只有一条记录
+  views    Int      @default(0)
+  visitors Int      @default(0)
+}
+
+model SiteConfig {
+  id          Int     @id @default(autoincrement())
+  siteName    String  @default("我的技术博客")
+  description String? @db.Text
+  about       String? @db.LongText // 关于页面的内容
+  
+  // 社交链接
+  github      String?
+  twitter     String?
+  email       String?
+  heroImages  String?   @default("[]") // 存储背景图 URL 数组的 JSON 字符串
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
